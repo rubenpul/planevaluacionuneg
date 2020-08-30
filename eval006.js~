@@ -1,0 +1,1266 @@
+/*
+<!-- UNIVERSIDAD NACIONAL EXPERIMENTAL DE GUAYANA                                                -->
+<!-- REALIZADO POR: Ruben Pulido                                                              -->
+<!-- NOMBRE: eval001C.php                                                                          -->  
+<!-- DESCRIPCION: Controlador de Eventos de la pagina de eval001.php. Creación del plan de evaluacion-->
+<!-- ******************************************************************************************* -->*/
+
+
+   //ACTUALIZA LA PAGINA PARA MOSTRAR LOS DATOS DE LOS ESTUDIANTES SI ES UNO O DOS PARA 
+    //LA PROPUESTA DE TRABAJO DE GRADO
+    
+$(document).ready(function () {
+    
+    var Sesion = $('#p_Sesion').text();
+    var Cedula = $('#p_Cedula').text();
+    var ponderacion;
+    var ponderacionold;
+    var escalaactual = 0;
+    var notas = false;
+    var productoevaluar;
+    var semanaevaluar;
+    var ponderacionevaluar;
+    var idproductos;
+    var descarr;
+    var desasign;
+    
+    DatosDocente();
+ 
+    $("input[name=TipoActa]").change(function () {	
+       
+       VerNotas();
+               
+    });
+    
+    
+    //VER ACTA DE NOTAS
+    $("#bot_actanotas").click(function(){
+        
+        VerNotas();
+       
+               
+    });
+    
+    
+    function VerNotas(){
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var acta;     
+        
+        $("#div_Acta").css("display", "block"); 
+        
+        seccion= $("#lbl_seccion").text()
+        lapsovigencia = $("#lbl_lapsovigencia").text();
+        codcarr = $("#lbl_codcarr").text();
+        codasign = $("#lbl_codasign").text();
+        codsede = $("#lbl_codsede").text();
+        lapsoacademico = $("#lbl_lapsoacademico").text();
+        
+        if($("#radio_general").prop('checked')){
+            acta = 1;
+        }
+        else{
+            acta = 2;
+        }
+               
+        $.ajax({
+
+            datatype: 'json',
+            type: 'POST',
+            url: 'eval006Dao.php?'+ Sesion,
+            data:{Cedula:Cedula,Seccion:seccion,LapsoVigencia:lapsovigencia,Carrera:codcarr,Asignatura:codasign,Sede:codsede,LapsoAcademico:lapsoacademico,IdActa:acta,IdProductosDef:idproductos,DesCarrera:descarr,DesAsignatura:desasign,Opcion:11}
+
+        }).success(function(data){
+         
+            $("#div_tablaActa").empty();
+
+            $("#div_tablaActa").html(data);
+      
+        });  
+        
+    }
+    //VISUALIZAR PLAN DE EVALUACION
+    $("#table_ponderacion").on('click', '.ActualizarNotaAprob', function () {
+                 
+       //obtener datos ponderacion estudiante
+    
+                              
+        ponderacionold = $(this).closest('tr').find('input[id="nota"]').val();
+        
+        $(this).closest('tr').find('input[id="nota"]').prop('disabled', false);                
+        $(this).closest('tr').find('input[id="asistencia"]').prop('disabled', false);                
+        
+        $(this).closest('tr').find('input[id="actualizarnotaaprob"]').prop('disabled', true);
+        $(this).closest('tr').find('input[id="guardarnotaaprob"]').prop('disabled', false);
+        
+        
+        
+    });
+    
+    
+
+    //VISUALIZAR PLAN DE EVALUACION
+    $("#table_ponderacion").on('click', '.GuardarNotaAprob', function () {
+        var nombre;
+        var nuevaponderacion;
+        var nuevaasistencia;
+        var cedula;
+        var ideval;
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var fechaevaluacion;
+        var justificacion;
+        var wordCount;
+        
+        seccion= $("#lbl_seccion").text()
+        lapsovigencia = $("#lbl_lapsovigencia").text();
+        codcarr = $("#lbl_codcarr").text();
+        codasign = $("#lbl_codasign").text();
+        codsede = $("#lbl_codsede").text();
+        lapsoacademico = $("#lbl_lapsoacademico").text();
+        fechaevaluacion = $("#date_fechaevaluacion").val();    
+        
+       //obtener datos ponderacion estudiante
+       
+        $(this).closest('tr').each(function(index, element){
+                              
+            nombre =   $(element).find("td").eq(1).html(); 
+            nuevaponderacion = $(element).find('input[id="notabd"]').val();
+            if ($(element).find('input[id="asistencia"]').is(':checked')){
+                nuevaasistencia = 1;     
+            }
+            else{
+                 nuevaasistencia = 0;   
+            }
+            
+            cedula = $(element).find('input[id="cedula"]').val();
+            ideval = $(element).find('input[id="ideval"]').val();
+            
+        });  
+
+              
+        if (parseFloat(nuevaponderacion) > parseFloat(ponderacionold)){
+
+            justificacion = prompt("INDICAR LAS RAZONES PARA ACTUALIZAR LA NOTA DEL ESTUDIANTE " + nombre, " (min. 10 palabras)");
+
+            wordCount = justificacion.trim().replace(/\s+/gi, ' ').split(' ').length;
+            
+            if (wordCount >= 10){
+            
+                $.ajax({
+
+                     datatype: 'json',
+                     type: 'POST',
+                     url: 'eval006Dao.php?'+ Sesion,
+                     data:{Cedula:Cedula,IdEval:ideval,CedulaEst:cedula,Ponderacion:nuevaponderacion,Asistencia:nuevaasistencia,Carrera:codcarr,Asignatura:codasign,Seccion:seccion,Sede:codsede,LapsoAcademico:lapsoacademico,LapsoVigencia:lapsovigencia,FechaEvaluacion:fechaevaluacion,NotaAprobada:1,PonderacionOld:ponderacionold,Justificacion:justificacion,IdProductosDef:idproductos,Opcion:10}
+
+                  }).success(function(data){
+
+                                    
+                    if (data == 1){
+                        alert("EVALUACIÓN ACTUALIZADA SATISFACTORIAMENTE");
+                        ponderacionold = nuevaponderacion;
+                    }
+                    else{
+                        alert("FALTAN DATOS POR INGRESAR EN LA EVALUACIÓN");
+                    }
+                    $("#a_GuardarTodaPonderacion").prop('disabled', false);
+                }); 
+                
+               
+            }    
+            else{
+                alert("DEBE INDICAR MAS DETALLES DE LAS RAZONES PARA ACTUALIZAR LA NOTA DEL ESTUDIANTE " + nombre);
+            }    
+        }
+        else{
+            if (parseFloat(nuevaponderacion) < parseFloat(ponderacionold)){
+                alert("SOLO SE PUEDE ACTUALIZAR POR ENCIMA DE LA NOTA ACTUAL (" + ponderacionold + ")");
+            }
+            else{
+                alert("NO SE REALIZÓ LA ACTUALIZACIÓN. LA NOTA ACTUAL ES IGUAL A LA NOTA ANTERIOR");
+            }
+        }
+        
+        
+    });
+    
+    $("input[name=radio_lapso]").change(function () {	
+        var lapso = $(this).val();
+        
+        if(lapso.trim() == "LAPSO"){
+            $("#cmb_lapsoconsulta").prop("disabled",false);
+        }
+        else{
+            $("#cmb_lapsoconsulta").val('0');
+            $("#cmb_lapsoconsulta").prop("disabled",true);
+        }
+    });
+    
+    
+    $("#bot_buscarlapso").click(function(){
+       var valor;
+       
+       
+       valor = $('input:radio[name=radio_lapso]:checked').val();
+       
+       $("#div_referencia").css("display", "none");
+       $('#table_producto tbody').empty();
+       $("#div_Productos").css("display", "none"); 
+       $("#div_Acciones").css("display", "none");
+       $("#div_Acta").css("display", "none");
+       $("#div_Nota").css("display", "none");
+       
+       if (valor == "LAPSO"){
+          
+           if ($("#cmb_lapsoconsulta").val() != 0){
+                                
+                  $.ajax({
+
+                      datatype: 'json',
+                      type: 'POST',
+                      url: 'eval006Dao.php?'+ Sesion,
+                      data:{Cedula:Cedula,LapsoAcademico:$("#cmb_lapsoconsulta").val(),Opcion:8}
+
+                  }).success(function(data){
+                      $('#table_ofertadocente tbody').empty(); 
+                      $('#table_ofertadocente tbody').append(data);
+                      $('.ImagenIndicador').hide();
+                        
+                  });               
+           }
+           else{
+            alert("SELECCIONE EL LAPSO ACADÉMICO A CONSULTAR");
+           }
+           
+       } 
+       else{
+            if (valor == "LAPSOACTUAL"){
+                //DATOS DOCENTE LAPSO ACTIVO
+                $.ajax({
+
+                    datatype: 'json',
+                    type: 'POST',
+                    url: 'eval006Dao.php?'+ Sesion,
+                    data:{Cedula:Cedula,Opcion:1}
+
+                }).success(function(data){
+                    $('#table_ofertadocente tbody').empty(); 
+                    $('#table_ofertadocente tbody').append(data);
+                    $('.ImagenIndicador').hide();
+
+                });
+            }
+            else{
+                //DATOS DOCENTE LAPSO CIVA
+                 $.ajax({
+
+                     datatype: 'json',
+                     type: 'POST',
+                     url: 'eval006Dao.php?'+ Sesion,
+                     data:{Cedula:Cedula,Opcion:9}
+
+                 }).success(function(data){
+                    
+                     $('#table_ofertadocente tbody').empty(); 
+                     $('#table_ofertadocente tbody').append(data);
+                     $('.ImagenIndicador').hide();
+
+                 });                         
+            }     
+       }
+      
+       
+   }); 
+    
+    
+    
+    //OFERTA DOCENTE EN EL LAPSO ACTUAL          
+    function DatosDocente(){
+        
+        //DATOS DOCENTE HISTORICO LAPSOS
+        $.ajax({
+
+            datatype: 'json',
+            type: 'POST',
+            url: 'eval006Dao.php?'+ Sesion,
+            data:{Cedula:Cedula,Opcion:7}
+
+        }).success(function(data){
+              
+            $('#cmb_lapsoconsulta').html(data);
+            
+              
+        });    
+        
+        
+        //DATOS DOCENTE
+        $.ajax({
+
+            datatype: 'json',
+            type: 'POST',
+            url: 'eval006Dao.php?'+ Sesion,
+            data:{Cedula:Cedula,Opcion:1}
+
+        }).success(function(data){
+           
+            $('#table_ofertadocente tbody').append(data);
+            $('.ImagenIndicador').hide();
+              
+        });
+    }
+    
+     
+    
+    $("#table_ponderacion").on('click', '.ActualizarAsistencia', function () {
+    
+        if($(this).is(':checked')){
+            $(this).closest('tr').find('input[id="notabd"]').val('');
+            $(this).closest('tr').find('input[id="nota"]').val('');
+            $(this).closest('tr').find('input[id="nota"]').prop('disabled', false);        
+        }
+        else{
+            $(this).closest('tr').find('input[id="notabd"]').val('');
+            $(this).closest('tr').find('input[id="nota"]').val('');
+            $(this).closest('tr').find('input[id="nota"]').prop('disabled', true);
+        }
+        
+       
+    });
+    
+    
+    function validarfechaevaluacion(fecha){
+        var validado = true;
+        
+        alert(fecha.substr(0,2));
+        alert(fecha.substr(3,2));
+        alert(fecha.substr(6,4));
+        alert(parseInt(fecha.substr(6,4)));
+        
+        if (trim(fecha.substr(0,2)) != '01' || trim(fecha.substr(0,2)) != '02' || trim(fecha.substr(0,2)) != '03' || trim(fecha.substr(0,2)) != '04' || trim(fecha.substr(0,2)) != '05' || trim(fecha.substr(0,2)) != '06' || trim(fecha.substr(0,2)) != '07' || trim(fecha.substr(0,2)) != '08' || trim(fecha.substr(0,2)) != '09' || trim(fecha.substr(0,2)) != '10' || trim(fecha.substr(0,2)) != '11' || trim(fecha.substr(0,2)) != '12' || trim(fecha.substr(0,2)) != '13' || trim(fecha.substr(0,2)) != '14' || trim(fecha.substr(0,2)) != '15' || trim(fecha.substr(0,2)) != '16' || trim(fecha.substr(0,2)) != '17' || trim(fecha.substr(0,2)) != '18' || trim(fecha.substr(0,2)) != '19' || trim(fecha.substr(0,2)) != '20' || trim(fecha.substr(0,2)) != '21' || trim(fecha.substr(0,2)) != '22' || trim(fecha.substr(0,2)) != '23' || trim(fecha.substr(0,2)) != '24' || trim(fecha.substr(0,2)) != '25' || trim(fecha.substr(0,2)) != '26' || trim(fecha.substr(0,2)) != '27' || trim(fecha.substr(0,2)) != '28' || trim(fecha.substr(0,2)) != '29' || trim(fecha.substr(0,2)) != '30' || trim(fecha.substr(0,2)) != '31'){
+            validado = false;
+        }
+        
+        if (trim(fecha.substr(3,2)) != '01' || trim(fecha.substr(3,2)) != '02' || trim(fecha.substr(3,2)) != '03' || trim(fecha.substr(3,2)) != '04' || trim(fecha.substr(3,2)) != '05' || trim(fecha.substr(3,2)) != '06' || trim(fecha.substr(3,2)) != '07' || trim(fecha.substr(3,2)) != '08' || trim(fecha.substr(3,2)) != '09' || trim(fecha.substr(3,2)) != '10' || trim(fecha.substr(3,2)) != '11' || trim(fecha.substr(3,2)) != '12'){
+            validado = false;
+        }
+            
+        if (parseInt(fecha.substr(6,4)) >= 2018){
+            validado = false;
+        }
+                        
+        return validado;
+    }
+    
+    
+    
+    //GUARDAR TODAS LAS PONDERACIONES DE LA EVALUACION
+    $("#a_GuardarTodaPonderacion").click(function(){
+        
+        var arrayPonderacion = [];
+        var arrayCedula = [];
+        var arrayIdEvaluacion = [];
+        var arrayAsistencia = [];
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var seccion;
+        var fechaevaluacion;
+        var apto = true;
+       
+        
+        
+        if (!$(this).prop('disabled')){
+                $(this).prop('disabled', true);
+                
+                fechaevaluacion = $("#date_fechaevaluacion").val();
+               
+                if (fechaevaluacion != ""){
+                    
+                    //if (validarfechaevaluacion(fechaevaluacion)){
+                        $('input[name^="notabd"]').each(function() {
+                            arrayPonderacion.push($(this).val());
+                            if (parseFloat(ponderacion) < parseFloat($(this).val())){
+                                apto = false;                         
+                            }
+                        });
+
+                        $('input[name^="cedula"]').each(function() {  
+                            arrayCedula.push($(this).val());
+                        });
+
+                        $('input[name^="ideval"]').each(function() {  
+                            arrayIdEvaluacion.push($(this).val());
+                        });
+
+                        $('input[name^="asistencia"]').each(function() {  
+                            if($(this).is(':checked')){
+                               arrayAsistencia.push(1);
+                            }
+                            else{
+                               arrayAsistencia.push(0); 
+                            }
+
+                        });
+
+
+
+                       seccion= $("#lbl_seccion").text()
+                       lapsovigencia = $("#lbl_lapsovigencia").text();
+                       codcarr = $("#lbl_codcarr").text();
+                       codasign = $("#lbl_codasign").text();
+                       codsede = $("#lbl_codsede").text();
+                       lapsoacademico = $("#lbl_lapsoacademico").text();
+
+                       if (apto){
+                            $.ajax({
+
+                                 datatype: 'json',
+                                 type: 'POST',
+                                 url: 'eval006Dao.php?'+ Sesion,
+                                 data:{Cedula:Cedula,IdEval:arrayIdEvaluacion,CedulaEst:arrayCedula,Ponderacion:arrayPonderacion,Asistencia:arrayAsistencia,Carrera:codcarr,Asignatura:codasign,Seccion:seccion,Sede:codsede,LapsoAcademico:lapsoacademico,LapsoVigencia:lapsovigencia,FechaEvaluacion:fechaevaluacion,IdProductosDef:idproductos,Opcion:4}
+
+                              }).success(function(data){
+                                 
+                                if (data == 1){
+                                    alert("EVALUACIÓN ACTUALIZADA SATISFACTORIAMENTE");
+                                }
+                                else{
+                                    alert("FALTAN DATOS POR INGRESAR EN LA EVALUACIÓN");
+                                }
+                                $("#a_GuardarTodaPonderacion").prop('disabled', false);
+                            });        
+                        }
+                        else{
+                            alert("NO SE ACTUALIZÓ. HAY PONDERACIONES MAYORES A " + ponderacion + "%");
+                            $("#a_GuardarTodaPonderacion").prop('disabled', false);
+                        }
+                    }
+                    else{
+                        alert(fechaevaluacion);                   
+                        alert("SELECCIONE LA FECHA DE EVALUACIÓN VÁLIDA PARA GUARDAR EVALUACIÓN. (dd/mm/yyyy)");
+                        $("#date_fechaevaluacion").val('');
+                        $("#a_GuardarTodaPonderacion").prop('disabled', false);
+                    }
+                        
+                /*}
+                else{
+                               
+                    alert("SELECCIONE LA FECHA DE EVALUACIÓN VÁLIDA PARA GUARDAR EVALUACIÓN. (dd/mm/yyyy)");
+                    $("#date_fechaevaluacion").val('');
+                    $("#a_GuardarTodaPonderacion").prop('disabled', false);
+                }*/
+        }
+        else{
+            
+        }
+    });
+       
+    //VISUALIZAR PLAN DE EVALUACION
+    $("#table_ofertadocente").on('click', '.GenerarProductos', function () {
+        var oferta;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var lapsoacademicosis;
+        var seccion;
+        var semana = false;
+        var totalponderacion = 0; 
+        var cantidad;
+        
+         $('.ImagenIndicador').hide();
+        
+        //obtener datos de la oferta
+        $(this).closest('tr').each(function(index, element){
+                              
+            oferta =   $(element).find("td").eq(1).html() + " - " +  $(element).find("td").eq(0).html() + " - SECCIÓN " + $(element).find("td").eq(2).html();
+
+            seccion = $(element).find("td").eq(2).html();
+            lapsovigencia = $(element).find("td").eq(4).html();
+            codcarr = $(element).find("td").eq(5).html();
+            codasign = $(element).find("td").eq(6).html();
+            codsede = $(element).find("td").eq(7).html();
+            lapsoacademico = $(element).find("td").eq(8).html();
+            lapsoacademicosis = $(element).find("td").eq(11).html();
+            desasign = $(element).find("td").eq(0).html();
+            descarr = $(element).find("td").eq(1).html();
+            
+             $(this).find("td").children('img').show();
+        });    
+        
+        $("#lbl_ofertadocente").text(oferta);
+
+        $("#lbl_seccion").text(seccion)
+        $("#lbl_lapsovigencia").text(lapsovigencia);
+        $("#lbl_codcarr").text(codcarr);
+        $("#lbl_codasign").text(codasign);
+        $("#lbl_codsede").text(codsede);
+        $("#lbl_lapsoacademico").text(lapsoacademico);
+        $("#lbl_lapsoacademicosis").text(lapsoacademicosis);
+        
+            
+        //DATOS PRODUCTOS
+        $.ajax({
+
+            datatype: 'json',
+            type: 'POST',
+            url: 'eval006Dao.php?'+ Sesion,
+            data:{Cedula:Cedula,Carrera:codcarr,Asignatura:codasign,Seccion:seccion,Sede:codsede,LapsoAcademico:lapsoacademico,LapsoVigencia:lapsovigencia,Opcion:2}
+
+        }).success(function(data){
+            $('#table_producto tbody').empty();
+            $('#table_producto tbody').append(data);
+            
+            $('#table_producto tr ').each(function(index, element){
+               if ($(element).find("td").eq(6).html() >= -1){
+                totalponderacion = totalponderacion + parseFloat($(element).find("td").eq(2).html()); 
+               }
+            });  
+            
+            idproductos= 0;
+            if (totalponderacion <= 100){
+                cantidad = $('#table_producto tr ').length -2;
+                $('#table_producto tr ').each(function(index, element){
+
+                    if ($(element).find("td").eq(6).html() == 0){
+                        if (!semana){
+                            $(element).find("td").eq(6).html(-1); 
+                            productoevaluar = $(element).find("td").eq(1).html(); 
+                            ponderacionevaluar = $(element).find("td").eq(2).html(); 
+                            semanaevaluar = $(element).find("td").eq(3).html();
+                            semana = true;
+                        }    
+                    }    
+                    
+                                     
+                    if (idproductos == 0){
+                        idproductos = $(element).find("td").eq(5).html();
+                    }
+                    else{
+                        if (index <= cantidad){
+                            idproductos = idproductos + "," + $(element).find("td").eq(5).html();
+                        }
+                    }
+                    
+
+                });   
+               
+            }
+            else{
+                alert("REVISAR EL PLAN DE EVALUACIÓN DE " + oferta + ", ACTUALMENTE TIENE " + totalponderacion + "%");
+                $('#table_producto tbody').empty();
+                $("#div_Productos").css("display", "none"); 
+            }
+           
+              
+        });
+       
+        if (totalponderacion <= 100){     
+            $("#div_Productos").css("display", "block"); 
+        }    
+        $("#div_Nota tbody").empty();
+        $("#div_Nota").css("display", "none");
+        $("#div_Acciones").css("display", "none")
+        $("#div_Acta").css("display", "none"); 
+          
+    });
+    
+    //VISUALIZAR PLAN DE EVALUACION
+    $("#table_producto").on('click', '.TranscritaEvaluacion', function () {
+        
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var asignatura;
+        var sede;
+        var carrera;
+        var docente;
+        var semestre;
+        var producto;
+        var status;
+        var ideval;
+        var fechaevaluacion;
+           
+        
+        
+        $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+        $("#lbl_productoaevaluar").text(producto);
+        $("#lbl_ponderacion").text(ponderacion);
+        
+        //obtener datos de la oferta
+        $(this).closest('tr').each(function(index, element){
+                              
+                producto =   $(element).find("td").eq(1).html(); 
+                ponderacion = $(element).find("td").eq(2).html();
+                status = $(element).find("td").eq(6).html();
+                ideval = $(element).find("td").eq(5).html();
+                fechaevaluacion = $(element).find("td").eq(7).html();
+        });    
+        
+                   
+       if (status == 1){
+        
+            $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+            $("#lbl_productoaevaluar").text("PRODUCTO O EVIDENCIA:" + " " + producto);
+            $("#lbl_ponderacion").text("PONDERACIÓN: " + ponderacion + "%");
+
+            $("#date_fechaevaluacion").val(fechaevaluacion);
+
+            $("#date_fechaevaluacion").prop("disabled", false);
+            
+             seccion= $("#lbl_seccion").text()
+             lapsovigencia = $("#lbl_lapsovigencia").text();
+             codcarr = $("#lbl_codcarr").text();
+             codasign = $("#lbl_codasign").text();
+             codsede = $("#lbl_codsede").text();
+             lapsoacademico = $("#lbl_lapsoacademico").text();
+             carrera = $("#lbl_carrera").text();
+             asignatura = $("#lbl_asignatura").text();
+             sede = $("#lbl_sede").text();
+             docente = $("#lbl_docente").text();
+             semestre = $("#lbl_semestre").text();
+
+
+             $.ajax({
+
+                 datatype: 'json',
+                 type: 'POST',
+                 url: 'eval006Dao.php?'+ Sesion,
+                 data:{Seccion:seccion,LapsoVigencia:lapsovigencia,Carrera:codcarr,Asignatura:codasign,Sede:codsede,LapsoAcademico:lapsoacademico,IdEval:ideval,Opcion:5}
+
+             }).success(function(data){
+                 
+                 $("#div_Nota tbody").empty();
+
+                 $("#div_Nota tbody").append(data);
+
+                 $("#lbl_porcentaje").text('[1% - ' + ponderacion + '%]');
+                 
+                 notas = true;
+
+             });      
+
+
+              $("#div_Nota").css("display", "block");
+              $("#div_Acciones").css("display", "block");
+              $("#div_Productos").css("display", "none");
+              //$("#div_escala").css("display", "block");
+              $("#div_Acta").css("display", "none"); 
+        }  
+        else{
+            
+            alert("DEBE EVALUAR EL PRODUCTO "  + productoevaluar + " PONDERACIÓN " + ponderacionevaluar + " SEMANA " + semanaevaluar);
+            
+        }
+        
+    });
+    
+        //VISUALIZAR PLAN DE EVALUACION
+    $("#table_producto").on('click', '.AprobadaEvaluacion', function () {
+        
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var asignatura;
+        var sede;
+        var carrera;
+        var docente;
+        var semestre;
+        var producto;
+        var status;
+        var ideval;
+        var fechaevaluacion;
+               
+        $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+        $("#lbl_productoaevaluar").text(producto);
+        $("#lbl_ponderacion").text(ponderacion);
+        
+        //obtener datos de la oferta
+        $(this).closest('tr').each(function(index, element){
+                              
+                producto =   $(element).find("td").eq(1).html(); 
+                ponderacion = $(element).find("td").eq(2).html();
+                status = $(element).find("td").eq(6).html();
+                ideval = $(element).find("td").eq(5).html();
+                fechaevaluacion = $(element).find("td").eq(7).html();
+        });    
+        
+                   
+       if (status == 2){
+        
+            $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+            $("#lbl_productoaevaluar").text("PRODUCTO O EVIDENCIA:" + " " + producto);
+            $("#lbl_ponderacion").text("PONDERACIÓN: " + ponderacion + "%");
+
+            $("#date_fechaevaluacion").val(fechaevaluacion);
+            
+            $("#date_fechaevaluacion").prop("disabled", true);
+
+             seccion= $("#lbl_seccion").text()
+             lapsovigencia = $("#lbl_lapsovigencia").text();
+             codcarr = $("#lbl_codcarr").text();
+             codasign = $("#lbl_codasign").text();
+             codsede = $("#lbl_codsede").text();
+             lapsoacademico = $("#lbl_lapsoacademico").text();
+             carrera = $("#lbl_carrera").text();
+             asignatura = $("#lbl_asignatura").text();
+             sede = $("#lbl_sede").text();
+             docente = $("#lbl_docente").text();
+             semestre = $("#lbl_semestre").text();
+
+
+             $.ajax({
+
+                 datatype: 'json',
+                 type: 'POST',
+                 url: 'eval006Dao.php?'+ Sesion,
+                 data:{Seccion:seccion,LapsoVigencia:lapsovigencia,Carrera:codcarr,Asignatura:codasign,Sede:codsede,LapsoAcademico:lapsoacademico,IdEval:ideval,Opcion:6}
+
+             }).success(function(data){
+
+                 $("#div_Nota tbody").empty();
+                 $("#div_Nota tbody").empty();
+
+                 $("#div_Nota tbody").append(data);
+
+                 $("#lbl_porcentaje").text('[1% - ' + ponderacion + '%]');
+                 
+                 notas = true;
+                 
+                 
+                 
+             });      
+
+
+            $("#div_Nota").css("display", "block");
+            $("#div_Acciones").css("display", "none");
+            $("#div_Productos").css("display", "none");
+            //$("#div_escala").css("display", "none");
+            $("#div_Acta").css("display", "none");   
+              
+        }  
+        else{
+            
+            alert("DEBE EVALUAR EL PRODUCTO "  + productoevaluar + " PONDERACIÓN " + ponderacionevaluar + " SEMANA " + semanaevaluar);
+            
+        } 
+        
+    });
+    
+    
+    
+     //VISUALIZAR PLAN DE EVALUACION
+    $("#table_producto").on('click', '.CerradaEvaluacion', function () {
+        
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var asignatura;
+        var sede;
+        var carrera;
+        var docente;
+        var semestre;
+        var producto;
+        var status;
+        var ideval;
+        var fechaevaluacion;
+               
+        $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+        $("#lbl_productoaevaluar").text(producto);
+        $("#lbl_ponderacion").text(ponderacion);
+        
+        //obtener datos de la oferta
+        $(this).closest('tr').each(function(index, element){
+                              
+                producto =   $(element).find("td").eq(1).html(); 
+                ponderacion = $(element).find("td").eq(2).html();
+                status = $(element).find("td").eq(6).html();
+                ideval = $(element).find("td").eq(5).html();
+                fechaevaluacion = $(element).find("td").eq(7).html();
+        });    
+        
+                   
+       if ((status == 3) || (status == 4)) {
+        
+            $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+            $("#lbl_productoaevaluar").text("PRODUCTO O EVIDENCIA:" + " " + producto);
+            $("#lbl_ponderacion").text("PONDERACIÓN: " + ponderacion + "%");
+
+            $("#date_fechaevaluacion").val(fechaevaluacion);
+            
+            $("#date_fechaevaluacion").prop("disabled", true);
+
+             seccion= $("#lbl_seccion").text()
+             lapsovigencia = $("#lbl_lapsovigencia").text();
+             codcarr = $("#lbl_codcarr").text();
+             codasign = $("#lbl_codasign").text();
+             codsede = $("#lbl_codsede").text();
+             lapsoacademico = $("#lbl_lapsoacademico").text();
+             carrera = $("#lbl_carrera").text();
+             asignatura = $("#lbl_asignatura").text();
+             sede = $("#lbl_sede").text();
+             docente = $("#lbl_docente").text();
+             semestre = $("#lbl_semestre").text();
+
+
+             $.ajax({
+
+                 datatype: 'json',
+                 type: 'POST',
+                 url: 'eval006Dao.php?'+ Sesion,
+                 data:{Seccion:seccion,LapsoVigencia:lapsovigencia,Carrera:codcarr,Asignatura:codasign,Sede:codsede,LapsoAcademico:lapsoacademico,IdEval:ideval,Opcion:12}
+
+             }).success(function(data){
+
+                 $("#div_Nota tbody").empty();
+                 $("#div_Nota tbody").empty();
+
+                 $("#div_Nota tbody").append(data);
+
+                 $("#lbl_porcentaje").text('[1% - ' + ponderacion + '%]');
+                 
+                 notas = true;
+                 
+                 
+                 
+             });      
+
+
+            $("#div_Nota").css("display", "block");
+            $("#div_Acciones").css("display", "none");
+            $("#div_Productos").css("display", "none");
+            //$("#div_escala").css("display", "none");
+            $("#div_Acta").css("display", "none");   
+              
+        }  
+        else{
+            
+            alert("DEBE EVALUAR EL PRODUCTO "  + productoevaluar + " PONDERACIÓN " + ponderacionevaluar + " SEMANA " + semanaevaluar);
+            
+        } 
+        
+    });
+    
+     //VISUALIZAR PLAN DE EVALUACION
+    $("#table_producto").on('click', '.AgregarEvaluacion', function () {
+        
+        var seccion;
+        var lapsovigencia;
+        var codcarr;
+        var codasign;
+        var codsede;
+        var lapsoacademico;
+        var asignatura;
+        var sede;
+        var carrera;
+        var docente;
+        var semestre;
+        var producto;
+        var status;
+        var ideval;
+        var aprobar = false;
+        var aprobar2 = false;
+        var id_evaluacionaprobar=-1;
+        var fechaevaluacion
+        var ponderacion2;
+       
+       
+        
+        
+        
+        $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+        $("#lbl_productoaevaluar").text(producto);
+        $("#lbl_ponderacion").text(ponderacion);
+        
+        //obtener datos de la oferta
+        $(this).closest('tr').each(function(index, element){
+                              
+                producto =   $(element).find("td").eq(1).html(); 
+                ponderacion = $(element).find("td").eq(2).html();
+                status = $(element).find("td").eq(6).html();
+                ideval = $(element).find("td").eq(5).html();
+        });    
+        
+                   
+       if (status == -1){
+        
+            $("#lbl_oferta").text($("#lbl_ofertadocente").text());
+            $("#lbl_productoaevaluar").text("PRODUCTO O EVIDENCIA:" + " " + producto);
+            $("#lbl_ponderacion").text("PONDERACIÓN: " + ponderacion + "%");
+
+            $("#date_fechaevaluacion").val('');
+            $("#date_fechaevaluacion").prop("disabled", false);
+
+             seccion= $("#lbl_seccion").text()
+             lapsovigencia = $("#lbl_lapsovigencia").text();
+             codcarr = $("#lbl_codcarr").text();
+             codasign = $("#lbl_codasign").text();
+             codsede = $("#lbl_codsede").text();
+             lapsoacademico = $("#lbl_lapsoacademicosis").text();
+             carrera = $("#lbl_carrera").text();
+             asignatura = $("#lbl_asignatura").text();
+             sede = $("#lbl_sede").text();
+             docente = $("#lbl_docente").text();
+             semestre = $("#lbl_semestre").text();
+
+
+             //VERIFICA SI HAY NOTAS TRANSCRITAS PARA APROBAR
+            $('#table_producto tr ').each(function(index, element){
+                
+                if ($(element).find("td").eq(6).html() == 1){ 
+                    producto =  $(element).find("td").eq(1).html();
+                    ponderacion2 = $(element).find("td").eq(2).html();
+                    fechaevaluacion = $(element).find("td").eq(8).html();
+                    aprobar = true;
+                    
+                    if(aprobar){
+                        aprobar = confirm("PARA AGREGAR OTRAS PONDERACIONES, DEBE APROBAR LA EVALUACIÓN DE " + producto + " CON UNA PONDERACIÓN DE " + ponderacion2 + "%, FECHA " + fechaevaluacion + ". DESEA CONTINUAR?");
+                        
+                        if (aprobar){
+                            aprobar2 = confirm("UNA VEZ QUE SE APRUEBE LA EVALUACIÓN DE " + producto + " CON UNA PONDERACIÓN DE " + ponderacion2 + "% SOLO SE PODRÁN CONSULTAR LAS PONDERACIONES. DESEA APROBARLO PARA CONTINUAR?");
+                        }
+                                    
+                        if (aprobar && aprobar2){
+
+                            id_evaluacionaprobar = $(element).find("td").eq(5).html();
+                        }
+                        else{
+
+                            id_evaluacionaprobar = -2;
+                        }
+                    }    
+                    
+                }    
+            
+                
+            }); 
+
+
+            if (id_evaluacionaprobar != -2){ // si no aprueba la evaluacion no podra agregar otra evaluacion
+                $.ajax({
+
+                    datatype: 'json',
+                    type: 'POST',
+                    url: 'eval006Dao.php?'+ Sesion,
+                    data:{Cedula:Cedula,Seccion:seccion,LapsoVigencia:lapsovigencia,Carrera:codcarr,Asignatura:codasign,Sede:codsede,LapsoAcademico:lapsoacademico,IdEval:ideval,IdEvalAprob:id_evaluacionaprobar,Opcion:3}
+
+                }).success(function(data){
+
+                    $("#div_Nota tbody").empty();
+
+                    $("#div_Nota tbody").append(data);
+
+                    $("#lbl_porcentaje").text('[1% - ' + ponderacion + '%]');
+
+                });      
+
+
+               $("#div_Nota").css("display", "block");
+               $("#div_Acciones").css("display", "block");
+               $("#div_Productos").css("display", "none");
+               //$("#div_escala").css("display", "block");
+               $("#div_Acta").css("display", "none"); 
+            }
+            else{
+            
+                alert("SE CANCELÓ TRANSACCIÓN");
+            }
+        }  
+        else{
+            
+            alert("DEBE EVALUAR EL PRODUCTO "  + productoevaluar + " PONDERACIÓN " + ponderacionevaluar + " SEMANA " + semanaevaluar);
+            
+        }
+  
+    });
+    
+    
+    //valida que la fecha sea numerico 
+    /*$("#date_fechaevaluacion").keyup(function(){
+        this.value = (this.value + '').replace(/[^0-9./,]/g, '');  
+        
+    });*/
+    
+    
+    
+    //al hacer click en el verifica si hay notas cargadas. si es afirmativo confirma si se desea 
+    //borrar los datos. en caso contrario se queda en el estado anterior
+    $("#radio_porcentaje").click(function(){
+        var resp;
+        
+         
+        if (escalaactual != 0){
+            
+            if (notas){
+                resp = confirm("Al cambiar la escala, se borrarán las notas transcritas. Desea continuar?");
+
+
+                if(resp){
+
+                    $('input[name^="nota"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+
+                    $('input[name^="notadb"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+                    escalaactual = 0;
+                    notas= false;
+                }
+                else{
+
+                    if (escalaactual == 1){
+
+                        $("#radio_110").prop("checked", true);
+                    }
+
+                    if (escalaactual == 0){
+
+                        $("#radio_120").prop("checked", true);
+                    }
+
+                }
+            }
+            else{
+                escalaactual = 0;
+            }
+        }    
+       
+    });
+    
+    //al hacer click en el verifica si hay notas cargadas. si es afirmativo confirma si se desea 
+    //borrar los datos. en caso contrario se queda en el estado anterior
+    
+    $("#radio_110").click(function(){
+        var resp;
+        
+        if (escalaactual != 1){
+            
+          if(notas){ 
+                resp = confirm("Al cambiar la escala, se borrarán las notas transcritas. Desea continuar?");
+
+                if(resp){
+
+                    $('input[name^="nota"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+
+                    $('input[name^="notadb"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+                    escalaactual = 1;
+                    notas= false;
+                }
+                else{
+
+                    if (escalaactual == 0){
+
+                        $("#radio_porcentaje").prop("checked", true);
+                    }
+
+                    if (escalaactual == 2){
+
+                        $("#radio_120").prop("checked", true);
+                    }
+
+                }
+            } 
+            else{
+                escalaactual = 1;
+            }
+        }
+       
+    });
+
+    //al hacer click en el verifica si hay notas cargadas. si es afirmativo confirma si se desea 
+    //borrar los datos. en caso contrario se queda en el estado anterior
+
+    $("#radio_120").click(function(){
+        var resp;
+        
+        if (escalaactual != 2){
+            
+            if(notas){ 
+            
+                resp = confirm("Al cambiar la escala, se borrarán las notas transcritas. Desea continuar?");
+
+                if(resp){
+
+                    $('input[name^="nota"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+
+                    $('input[name^="notadb"]').each(function() {
+
+                        if ($(this).val()!= ''){
+                            $(this).val('');
+
+                        }
+                    });
+                    escalaactual = 2;
+                    notas= false;
+                }
+                else{
+
+                    if (escalaactual == 0){
+
+                        $("#radio_porcentaje").prop("checked", true);
+                    }
+
+                    if (escalaactual == 1){
+
+                        $("#radio_110").prop("checked", true);
+                    }
+
+                } 
+            }
+            else{
+                escalaactual = 2;
+            }
+        }    
+       
+    });
+    
+    
+     //VALIDAR LOS DATOS DE LA NOTA Y DE LA ESCALA
+    $("#table_ponderacion").on('keyup', '.NotaEstudiante', function () {
+        var nota;
+       
+        if($("#radio_porcentaje").prop('checked')){
+            this.value = (this.value + '').replace(/[^0-9.,]/g, '');  
+                  
+            if (this.value.trim() != ""){
+                
+                if (parseFloat(this.value.trim().replace(',', '.')) > parseFloat(ponderacion.trim())){
+                    $(this).closest('tr').find('input[id="notabd"]').val('');
+                    this.value = "";
+                    alert("LA PONDERACIÓN DE LA EVALUACIÓN ES MIN 1% - MÁX " + ponderacion.trim() + "%");
+                }
+                else{
+                    
+                    if (this.value != '00' &&  this.value != ',' && this.value != '.' && this.value.substring(1) != ',,' && this.value.substring(1) != '..' && this.value.substring(1) != ',.' && this.value.substring(1) != '.,' && this.value.substring(3) != ',' && this.value.substring(3) != '.'){
+                        $(this).closest('tr').find('input[id="notabd"]').val(this.value.trim().replace(',', '.'));
+                        notas = true;
+                    }
+                    else{
+                        $(this).closest('tr').find('input[id="notabd"]').val('');
+                        this.value = "";
+                        alert("FORMATO NO VÁLIDO");
+                    }
+                }
+            } 
+            else{
+                 $(this).closest('tr').find('input[id="notabd"]').val('');
+            }
+           
+                    
+        }
+        
+        if($("#radio_110").prop('checked')){
+            this.value = (this.value + '').replace(/[^0-9.,]/g, '');  
+                       
+            if (this.value.trim() != ""){
+                
+                if (parseFloat(this.value.trim().replace(',', '.')) > parseFloat(10)){
+                    $(this).closest('tr').find('input[id="notabd"]').val('');
+                    this.value = "";
+                    alert("LA PONDERACIÓN DE LA EVALUACIÓN ES MIN 1 - MÁX 10");
+                }
+                else{
+                    nota = (parseFloat(this.value.trim().replace(',', '.')) * ponderacion) / 10;
+                    if (this.value != '00' && this.value != ',' && this.value != '.' && this.value.substring(1) != ',,' && this.value.substring(1) != '..' && this.value.substring(1) != ',.' && this.value.substring(1) != '.,' && this.value.substring(3) != ',' && this.value.substring(3) != '.'){
+                        $(this).closest('tr').find('input[id="notabd"]').val(nota);
+                        notas = true;
+                    }
+                    else{
+                        $(this).closest('tr').find('input[id="notabd"]').val('');
+                        this.value = "";
+                        alert("FORMATO NO VÁLIDO");
+                    }
+                }
+            }
+            else{
+                
+                $(this).closest('tr').find('input[id="notabd"]').val('');
+            }
+                      
+        }
+        
+        if($("#radio_120").prop('checked')){
+            this.value = (this.value + '').replace(/[^0-9.,]/g, '');  
+                       
+            if (this.value.trim() != ""){
+                
+                if (parseFloat(this.value.trim().replace(',', '.')) > parseFloat(20)){
+                    $(this).closest('tr').find('input[id="notabd"]').val('');
+                    this.value = "";
+                    alert("LA PONDERACIÓN DE LA EVALUACIÓN ES MIN 1 - MÁX 20");
+                }
+                else{
+                    nota = (parseFloat(this.value.trim().replace(',', '.')) * ponderacion) / 20;
+                    if (this.value != '00' && this.value != ',' && this.value != '.' && this.value.substring(1) != ',,' && this.value.substring(1) != '..' && this.value.substring(1) != ',.' && this.value.substring(1) != '.,' && this.value.substring(3) != ',' && this.value.substring(3) != '.'){
+                        $(this).closest('tr').find('input[id="notabd"]').val(nota);
+                        notas = true;
+                    }
+                    else{
+                        $(this).closest('tr').find('input[id="notabd"]').val('');
+                        this.value = "";
+                        alert("FORMATO NO VÁLIDO");
+                    }            
+                }
+            }
+            else{
+                
+                $(this).closest('tr').find('input[id="notabd"]').val('');
+            }  
+                      
+        }
+            
+    });
+    
+    
+ 
+        
+        
+ });

@@ -1,0 +1,176 @@
+<?php
+
+//error_reporting(E_ALL);
+
+require_once('../webconfig/parametros.php');
+require_once('../webconfig/setup.php');
+require_once('../funciones/acceso_preg.php');
+require_once('funciones.php');
+
+
+if(isset($_POST['Opcion'])){
+    
+    $opcion = $_POST['Opcion'];
+    $carrera = $_POST['Carrera'];
+    $semestre = $_POST['Semestre'];
+    $condicion = $_POST['Condicion'];
+    
+    switch ($opcion){
+        case 1: //CARRERAS
+               
+                $nro=0;
+                $datos = Consultar_carreras($nro);
+                $combo = "<select class=\"txtNormal\" name=\"cmb_carrera\" name=\"cmb_carrera\">\n".
+                             "<option  selected value=\"00\">Seleccione...</option>\n";
+                
+                if ($nro > 0){	
+                    $i=0;                 
+                    while ($i<$nro) {
+                        
+                        $combo = $combo. "<option  value=" . trim($datos[$i]['sce080d_cod_carr']) . ">" . strtoupper(utf8_encode(trim($datos[$i]['sce080d_nom_carr'])))  . "</option>\n";
+                        $i++;
+                        
+                    }    
+                }		            
+
+                $combo = $combo. "</select>";
+                
+                echo $combo;
+                
+                break;
+                
+        case 2: //DETALLE UNIDAD CURRICULAR
+            
+            if (isset($_POST['Carrera'])){
+                
+                $nro=0;
+                $datos =  Consultar_had_docente($nro,$carrera,$semestre,$condicion);
+                $tabla = "";
+                $tablaexport ="<table>".
+                             "<tr>".
+                             "<td>N° Cédula</td>".   
+                             "<td>Nombres</td>".  
+                             "<td>Proyecto de Carrera</td>".
+                             "<td>Código</td>".
+                             "<td>Unidad Curricular</td>".
+                             "<td>Semestre</td>".
+                             "<td>Sección</td>".
+                             "<td>Condición Docente</td>".
+                             "<td>HAD</td>".
+                             "<td>N° Encuentros Verificado</td>".
+                             "<td>Fechas de Encuentos Validadas</td>".
+                             "<td>Última Fecha Actualización</td>".
+                             "</tr>";
+                
+                if ($nro > 0){	
+                    $i=0;                 
+                    while ($i<$nro) {
+                        $tablaexport = $tablaexport . "<tr>";
+                        if($i % 2){
+                            $tabla = $tabla . "<tr class=\"alt\">";
+                        }
+                        else{
+                            $tabla = $tabla . "<tr>";   
+                        }
+                        
+                        $datos2 = ConsultarAsistVerificada(&$nro2,trim($datos[$i]["sce070d_cedula_doc"]),trim($datos[$i]["sce070d_lapso"]),trim($datos[$i]["sce070d_sede"]),trim($datos[$i]["sce070d_cod_carr"]),trim($datos[$i]["sce070d_seccion"]),trim($datos[$i]["sce070d_cod_asign"]),$datos[$i]["sce070d_lapso_vigencia"]);
+                        $datos3 = ConsultarUltFechaVerificada(&$nro3,trim($datos[$i]["sce070d_cedula_doc"]),trim($datos[$i]["sce070d_lapso"]),trim($datos[$i]["sce070d_sede"]),trim($datos[$i]["sce070d_cod_carr"]),trim($datos[$i]["sce070d_seccion"]),trim($datos[$i]["sce070d_cod_asign"]),$datos[$i]["sce070d_lapso_vigencia"]);
+                        
+                        if($nro3 > 0){
+                            $fechaact = $datos3[0]["eval005d_fecha_registro"];   
+                        }
+                        else{
+                            $fechaact = ""; 
+                        }
+                        
+                        $j=0;
+                        $fechas="";
+                        $nroencuentros=0;
+                        while($j<$nro2){
+                            $nroencuentros= $j+1;
+                            if ($j==0){
+                                $fechas = $datos2[$j]["eval005d_fecha_encuentro"];
+                            }
+                            else{
+                                $fechas = $fechas . ",\n". $datos2[$j]["eval005d_fecha_encuentro"];
+                            }
+                            $j++;
+                            
+                        }
+                        
+                        $tabla = $tabla . "<td width=\"60px\" align=\"center\">". trim($datos[$i]["sce070d_cedula_doc"]) . "</td>".
+                        "<td width=\"250px\">". strtoupper(utf8_encode(trim($datos[$i]["nombre"]))) . "</td>". 
+                        "<td width=\"100px\" align=\"center\">".  strtoupper(utf8_encode(trim($datos[$i]["sce080d_nom_carr"]))) . "</td> ".
+                        "<td width=\"100px\" align=\"center\">" . trim($datos[$i]["sce070d_cod_asign"]) . "</td>". 
+                        "<td width=\"100px\" align=\"center\">".  strtoupper(utf8_encode(trim($datos[$i]["sce090d_nom_asign"]))) . "</td> ".
+                        "<td width=\"100px\" align=\"center\">" . trim($datos[$i]["sce110d_semestre"]) . "</td>".        
+                        "<td width=\"100px\" align=\"center\">".  trim($datos[$i]["sce070d_seccion"]) . "</td> ".
+                        "<td width=\"100px\" align=\"center\">" . strtoupper(utf8_encode(trim($datos[$i]["desc_condicion"]))) . "</td>".        
+                        "<td width=\"100px\" align=\"center\">" . trim($datos[$i]["sce110d_had"]) . "</td>".        
+                        "<td width=\"100px\" align=\"center\">" . $nroencuentros . "</td>".        
+                        "<td style=\"display:none;\" width=\"30px\"><input type=\"text\" name=\"lapsovigencia[]\" id=\"lapsovigencia\"   value = \"" . $datos[$i]["sce070d_lapso_vigencia"] . "\"></input></td>".                
+                        "<td style=\"display:none;\"><input type=\"text\" name=\"codcarr[]\" id=\"codcarr\"   value = \"" . trim($datos[$i]["sce070d_cod_carr"]) . "\"></input></td>".                
+                        "<td style=\"display:none;\"><input type=\"text\" name=\"codasign[]\" id=\"codasign\"   value = \"" . trim($datos[$i]["sce070d_cod_asign"]) . "\"></input></td>".                
+                        "<td style=\"display:none;\"><input type=\"text\" name=\"codsede[]\" id=\"codsede\"   value = \"" . trim($datos[$i]["desc_condicion"]) . "\"></input></td>".                
+                        "<td style=\"display:none;\"><input type=\"text\" name=\"lapso[]\" id=\"lapso\"   value = \"" . trim($datos[$i]["sce070d_lapso"]) . "\"></input></td>".                
+                        "<td style=\"display:none;\">" . $fechas . "</td>". 
+                        "</tr>";                         
+                        
+                        $tablaexport = $tablaexport . "<td>". trim($datos[$i]["sce070d_cedula_doc"]) . "</td>".
+                        "<td >". strtoupper(trim($datos[$i]["nombre"])) . "</td>". 
+                        "<td >".  strtoupper(trim($datos[$i]["sce080d_nom_carr"])) . "</td> ".
+                        "<td >" . trim($datos[$i]["sce070d_cod_asign"]) . "</td>". 
+                        "<td >".  strtoupper(trim($datos[$i]["sce090d_nom_asign"])) . "</td> ".
+                        "<td >" . trim($datos[$i]["sce110d_semestre"]) . "</td>".        
+                        "<td >".  trim($datos[$i]["sce070d_seccion"]) . "</td> ".
+                        "<td >" . strtoupper(trim($datos[$i]["desc_condicion"])) . "</td>".        
+                        "<td >" . trim($datos[$i]["sce110d_had"]) . "</td>".        
+                        "<td >" . $nroencuentros . "</td>".   
+                        "<td >" . $fechas . "</td>".
+                        "<td >" . $fechaact . "</td>".
+                        "</tr>"; 
+                        
+                        $i++;
+                        
+                    }    
+                }		            
+
+                $tabla = $tabla . "</tbody></table>";
+                $tablaexport = $tablaexport . "</table>";
+                $_SESSION['datos_export_excel'] = $tablaexport;
+                
+                echo $_SESSION['datos_export_excel'];
+                
+                break;
+           
+            }
+            
+        case 3: //CONDICION DOCENTE
+               
+                $nro=0;
+                $datos = Consultar_Condicion($nro);
+                $combo = "<select class=\"txtNormal\" name=\"cmb_condicion\" name=\"cmb_condicion\">\n".
+                             "<option  selected value=\"0\">Seleccione...</option>\n";
+                
+                if ($nro > 0){	
+                    $i=0;                 
+                    while ($i<$nro) {
+                        
+                        $combo = $combo. "<option  value=" . trim($datos[$i]['cod_condicion']) . ">" . strtoupper(utf8_encode(trim($datos[$i]['desc_condicion'])))  . "</option>\n";
+                        $i++;
+                        
+                    }    
+                }		            
+
+                $combo = $combo. "</select>";
+                
+                echo $combo;
+                
+                break;    
+                       
+            
+    }//fin switch
+} 
+   
+
+               

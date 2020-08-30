@@ -1,0 +1,41 @@
+<?php
+/*
+<!-- inscripcion/listado_inscritos_excel.php                                                     -->
+<!-- ******************************************************************************************* -->
+<!-- UNIVERSIDAD NACIONAL EXPERIMENTAL DE GUAYANA                                                -->
+<!-- REALIZADO POR: ING RUBEN PULIDO                                                                  -->
+<!-- NOMBRE: eval005.php                                                         -->
+<!-- DESCRIPCION: Listado Asistencia                                      -->
+<!-- ******************************************************************************************* -->
+*/
+// Enviamos los encabezados de hoja de calculo 
+/*header("Content-type: application/vnd.ms-excel"); 
+header("Content-Disposition: attachment; filename=excel.xls"); */
+
+//Archivos del Sistema ------------------------------------------------------------------------------------
+$namepage="listado";
+require_once('../webconfig/config.php');
+require_once('../funciones/funciones_web.php');
+require_once('../funciones/acceso_preg.php');
+
+?>
+<html>
+    <head>
+        
+        <title></title>
+    </head>
+    <body>
+
+       
+        <div id="div_Sesion" >
+            <p id="Sesion"><?php echo SID; ?></p>
+            <p id="Cedula"><?php echo GetCedulaUser(EncriptarCad($key_log, $id_login, 2)); ?></p>
+        </div>
+        
+        <?php echo 1;?> 
+        
+        
+    </body>
+</html>
+
+ 
